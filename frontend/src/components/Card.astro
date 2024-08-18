@@ -1,61 +1,181 @@
 ---
 interface Props {
-	title: string;
-	body: string;
-	href: string;
+  title: string;
+  body: string;
+  href: string;
+  id: string; // Tambahkan id jika diperlukan untuk delete action
 }
 
-const { href, title, body } = Astro.props;
+const { href, title, body, id } = Astro.props;
 ---
 
-<li class="link-card">
-	<a href={href}>
-		<h2>
-			{title}
-			<span>&rarr;</span>
-		</h2>
-		<p>
-			{body}
-		</p>
-	</a>
+<li class="link-card" id={id}>
+  <a class="cardbody" href={href}>
+    <h2>
+      {title}
+      <span>&rarr;</span>
+    </h2>
+    <p>
+      {body}
+    </p>
+  </a>
+  <button class="delete-btn" data-id={id}>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1.2em"
+      height="1.2em"
+      viewBox="0 0 24 24"
+      ><path
+        d="M16 9v10H8V9zm-1.5-6h-5l-1 1H5v2h14V4h-3.5zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2z"
+      ></path></svg
+    ></button
+  >
+  <a href={`/update?id=${id}`} class="update-btn"
+    ><svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1rem"
+      height="1rem"
+      viewBox="0 0 24 24"
+      ><path
+        fill="currentColor"
+        d="M21 12a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6a1 1 0 0 0 0-2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6a1 1 0 0 0-1-1m-15 .76V17a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .71-.29l6.92-6.93L21.71 8a1 1 0 0 0 0-1.42l-4.24-4.29a1 1 0 0 0-1.42 0l-2.82 2.83l-6.94 6.93a1 1 0 0 0-.29.71m10.76-8.35l2.83 2.83l-1.42 1.42l-2.83-2.83ZM8 13.17l5.93-5.93l2.83 2.83L10.83 16H8Z"
+      ></path></svg
+    ></a
+  >
 </li>
+<script type="module">
+  const deletePost = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:3211/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error deleting post: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log("Deleted post:", result.deletedPost);
+      // Remove the post from the list after deletion
+      document.getElementById(id).remove();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Attach event listeners to all delete buttons
+  document.querySelectorAll(".delete-btn").forEach((button) => {
+    button.onclick = (event) => {
+      const id = event.target.getAttribute("data-id");
+      if (id) {
+        deletePost(id);
+      } else {
+        console.error("No ID found on button");
+      }
+    };
+  });
+
+  const updatePost = async (id, title, body) => {
+    try {
+      const response = await fetch(`http://localhost:3211/update/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ title, description: body }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error updating post: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log("Updated post:", result.updatePost);
+      // Optionally, you can update the UI here
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Attach event listeners to all update buttons
+  document.querySelectorAll(".update-btn").forEach((button) => {
+    button.onclick = (event) => {
+      const id = event.target.getAttribute("data-id");
+      const title = event.target.getAttribute("data-title");
+      const body = event.target.getAttribute("data-body");
+      if (id && title && body) {
+        updatePost(id, title, body);
+      } else {
+        console.error("No ID, title, or body found on button");
+      }
+    };
+  });
+</script>
+
 <style>
-	.link-card {
-		list-style: none;
-		display: flex;
-		padding: 1px;
-		background-color: #23262d;
-		background-image: none;
-		background-size: 400%;
-		border-radius: 7px;
-		background-position: 100%;
-		transition: background-position 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-	}
-	.link-card > a {
-		width: 100%;
-		text-decoration: none;
-		line-height: 1.4;
-		padding: calc(1.5rem - 1px);
-		border-radius: 8px;
-		color: white;
-		background-color: #23262d;
-		opacity: 0.8;
-	}
-	h2 {
-		margin: 0;
-		font-size: 1.25rem;
-		transition: color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-	}
-	p {
-		margin-top: 0.5rem;
-		margin-bottom: 0;
-	}
-	.link-card:is(:hover, :focus-within) {
-		background-position: 0;
-		background-image: var(--accent-gradient);
-	}
-	.link-card:is(:hover, :focus-within) h2 {
-		color: rgb(var(--accent-light));
-	}
+  .link-card {
+    list-style: none;
+    display: flex;
+    padding: 1px;
+    background-color: #23262d;
+    background-image: none;
+    background-size: 400%;
+    border-radius: 7px;
+    background-position: 100%;
+    transition: background-position 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  .link-card > .cardbody {
+    width: 100%;
+    text-decoration: none;
+    line-height: 1.4;
+    padding: calc(1.5rem - 1px);
+    border-radius: 8px;
+    color: white;
+    background-color: #23262d;
+    opacity: 0.8;
+  }
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    transition: color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  p {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+  }
+  .link-card:is(:hover, :focus-within) {
+    background-position: 0;
+    background-image: var(--accent-gradient);
+  }
+  .link-card:is(:hover, :focus-within) h2 {
+    color: rgb(var(--accent-light));
+  }
+  .delete-btn {
+    color: white;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    display: grid;
+    margin-right: 3px;
+    margin-left: 20px;
+    margin-top: auto;
+    margin-bottom: auto;
+    border-radius: 4px;
+    align-items: center;
+  }
+  .update-btn {
+    background-color: black;
+    color: aliceblue;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    display: grid;
+
+    margin-right: 20px;
+    margin-top: auto;
+    margin-bottom: auto;
+    align-items: center;
+    border-radius: 4px;
+  }
 </style>
